@@ -1,5 +1,3 @@
----
-
 **Development Process:**
 
 1. **Game Objective:**
@@ -30,5 +28,3 @@
 4. **Challenges Faced & Solutions:**
    - Achieving smooth animation synchronization between pump handle and balloon inflation.
    - Fine-tuning collision logic to prevent false positives.
-
----
