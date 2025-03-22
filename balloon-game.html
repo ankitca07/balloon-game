@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pump Balloon Game</title>
+  <style>
+    body {
+      background: url('Symbol 3 copy.png');
+      overflow: hidden;
+      margin: 0;
+      height: 100vh;
+    }
+
+    .pump-container {
+      position: absolute;
+      bottom: 50px;
+      right: 50px;
+      width: 300px;
+      height: 400px;
+    }
+
+    .handle {
+      position: absolute;
+      top: 60px;
+      left: 94px;
+      width: 160px;
+    }
+
+    .pump-animation {
+      animation: pump 0.8s ease-in-out;
+    }
+
+    @keyframes pump {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(20px); }
+    }
+
+    .pipe {
+      position: absolute;
+      right: 160px;
+      top: 150px;
+      width: 190px;
+    }
+
+    .tank {
+      position: absolute;
+      bottom: 0;
+      left: 48px;
+      width: 270px;
+    }
+
+    .balloon {
+      position: absolute;
+      right: 10px;
+      width: 90px;
+      height: 100px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      transform-origin: bottom center;
+      cursor: pointer;
+      transform: scale(0.1);
+      transition: transform 0.4s ease;
+    }
+
+    .balloon.floating {
+      animation: zigzagFloat 6s linear forwards;
+    }
+
+    .balloon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .alphabet {
+      position: absolute;
+      width: 50%;
+      height: 50%;
+      pointer-events: none;
+      transition: transform 0.1s ease, opacity 0.1s ease;
+    }
+
+    @keyframes zigzagFloat {
+      0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+      20% { transform: translate(-100px, -30px) rotate(5deg); }
+      40% { transform: translate(-200px, 30px) rotate(-5deg); }
+      60% { transform: translate(-300px, -30px) rotate(5deg); }
+      80% { transform: translate(-400px, 30px) rotate(-5deg); }
+      100% { transform: translate(-500px, 0px) rotate(0deg); opacity: 0; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="pump-container">
+    <img src="Symbol 320001.png" id="handle" class="handle" />
+    <img src="Symbol 320002.png" class="pipe" id="pipe" />
+    <img src="Symbol 320003.png" class="tank" width="180" />
+  </div>
+
+  <script>
+    const handle = document.getElementById('handle');
+    const pipe = document.getElementById('pipe');
+
+    const balloonImages = [
+      'Symbol 100008.png',
+      'Symbol 100009.png',
+      'Symbol 100010.png',
+    ];
+
+    const alphabetImages = [
+      'Symbol 10001.png',
+      'Symbol 10002.png',
+      'Symbol 10003.png',
+      'Symbol 10004.png',
+    ];
+
+    let balloons = [];
+
+    function pumpAction() {
+      let pumpCount = 0;
+      const totalPumps = 3;
+
+      const balloonDiv = createBalloonBase();
+
+      function singlePump() {
+        handle.classList.add('pump-animation');
+        setTimeout(() => {
+          handle.classList.remove('pump-animation');
+
+          pumpCount++;
+          // Inflate gradually
+          let scaleValue = 0.1 + 0.3 * pumpCount; // Increases by 0.3 each pump
+          balloonDiv.style.transform = `scale(${scaleValue})`;
+
+          if (pumpCount < totalPumps) {
+            setTimeout(singlePump, 300);
+          } else {
+            // Final full inflate + start floating
+            setTimeout(() => {
+              balloonDiv.style.transform = 'scale(1)';
+              balloonDiv.classList.add('floating');
+            }, 400);
+          }
+        }, 700);
+      }
+
+      singlePump();
+    }
+
+    function createBalloonBase() {
+      const balloonDiv = document.createElement('div');
+      balloonDiv.classList.add('balloon');
+
+      const pipeRect = pipe.getBoundingClientRect();
+      balloonDiv.style.left = (pipeRect.left + pipeRect.width / 2 - 90) + "px";
+      balloonDiv.style.top = (pipeRect.top - 55) + "px";
+
+      const balloonImg = document.createElement('img');
+      const randomBalloon = balloonImages[Math.floor(Math.random() * balloonImages.length)];
+      balloonImg.src = randomBalloon;
+      balloonDiv.appendChild(balloonImg);
+
+      const alphabetImg = document.createElement('img');
+      const randomAlphabet = alphabetImages[Math.floor(Math.random() * alphabetImages.length)];
+      alphabetImg.src = randomAlphabet;
+      alphabetImg.classList.add('alphabet');
+      balloonDiv.appendChild(alphabetImg);
+
+      balloonDiv.addEventListener('click', () => burstBalloon(balloonDiv, balloonImg, alphabetImg));
+
+      document.body.appendChild(balloonDiv);
+      balloons.push(balloonDiv);
+
+      return balloonDiv;
+    }
+
+    function burstBalloon(balloonDiv, balloonImg, alphabetImg) {
+      if (balloonDiv.dataset.burst === "true") return;
+      balloonDiv.dataset.burst = "true";
+      balloonImg.style.display = 'none';
+      alphabetImg.style.transform = 'translateX(300px) scale(1.5)';
+      alphabetImg.style.opacity = '0';
+      setTimeout(() => balloonDiv.remove(), 50000);
+      balloons = balloons.filter(b => b !== balloonDiv);
+    }
+
+    // Collision detection
+    setInterval(() => {
+      for (let i = 0; i < balloons.length; i++) {
+        for (let j = i + 1; j < balloons.length; j++) {
+          const rect1 = balloons[i].getBoundingClientRect();
+          const rect2 = balloons[j].getBoundingClientRect();
+          if (isColliding(rect1, rect2)) {
+            const img1 = balloons[i].querySelector('img:first-child');
+            const alpha1 = balloons[i].querySelector('.alphabet');
+            burstBalloon(balloons[i], img1, alpha1);
+
+            const img2 = balloons[j].querySelector('img:first-child');
+            const alpha2 = balloons[j].querySelector('.alphabet');
+            burstBalloon(balloons[j], img2, alpha2);
+          }
+        }
+      }
+    }, 100);
+
+    function isColliding(r1, r2) {
+      return !(r1.right < r2.left || r1.left > r2.right || r1.bottom < r2.top || r1.top > r2.bottom);
+    }
+
+    // Controls
+    document.addEventListener('mousedown', pumpAction);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        pumpAction();
+      }
+    });
+  </script>
+</body>
+</html>
